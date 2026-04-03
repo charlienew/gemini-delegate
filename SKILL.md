@@ -1,13 +1,15 @@
 ---
 name: gemini-delegate
 description: >
-  Delegate tasks to Google Gemini CLI when they exceed Claude's efficient working
-  range or require Gemini's unique capabilities. AUTO-INVOKE for: files over 500
-  lines or whole-codebase analysis; images (PNG, JPG, GIF, WEBP, SVG, BMP),
-  video (MP4, MOV, AVI, WEBM), or PDF files; real-time web search or current
-  information; architecture analysis, code generation, code review, security
-  audit, test generation, or documentation tasks where a second AI perspective
-  adds value; any task requiring more context than Claude can handle efficiently.
+  Save Claude Code token usage by delegating high-context tasks to Gemini CLI.
+  Two mechanisms: (1) write-directly — Gemini generates/modifies files with
+  --yolo, code never enters Claude's context; (2) structured handoff — Gemini
+  returns a targeted file list or checklist, Claude acts without re-reading
+  anything. AUTO-INVOKE for: tasks requiring more than 3-4 file reads; generating
+  more than ~100 lines of code; whole-codebase analysis or CLAUDE.md generation;
+  images (PNG, JPG, GIF, WEBP, SVG, BMP), video (MP4, MOV, AVI, WEBM), or PDF
+  files; real-time web search or current information; large diff/PR review or
+  refactor impact mapping; dead code detection or dependency migration analysis.
   Also invoke when user explicitly asks to use Gemini.
 allowed-tools:
   - Bash
