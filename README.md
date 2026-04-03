@@ -70,6 +70,8 @@ gemini --version
 # gemini x.x.x
 ```
 
+> **Tested on:** Gemini CLI v0.36.0
+
 ---
 
 ## Installation
