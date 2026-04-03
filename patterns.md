@@ -352,3 +352,46 @@ gemini -m $DEFAULT_MODEL --yolo "Create a user service. Execute immediately, do 
 1. Add `.geminiignore` to exclude `node_modules/`, `dist/`, `*.log`, `.env`
 2. Use `--include-directories ./src` instead of the whole project
 3. Split analysis into focused scoped calls
+
+---
+
+## Pattern 11: Full Delegation
+
+The highest token-saving pattern. Gemini does all the reading and writing —
+Claude only receives a short confirmation or structured summary.
+
+**When to use:**
+- Task requires reading more than 3-4 files
+- Task generates more than ~100 lines of code
+- Task involves scanning many files for patterns (data, logs, dead code)
+
+**Two variants:**
+
+**Write directly** — for generation tasks. Use `--yolo`. Gemini writes files to
+disk; Claude never sees the code, only a confirmation.
+```bash
+# Gemini generates AND writes — Claude context cost: ~50 tokens
+gemini -m $DEFAULT_MODEL --yolo \
+  "Generate [code]. Write to [path]. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+**Structured handoff** — for analysis tasks. No `--yolo`. Gemini returns a
+targeted list (file paths, checklists, tables) Claude can act on without
+re-reading anything.
+```bash
+# Gemini explores entire codebase — Claude context cost: size of the list only
+gemini -m $DEFAULT_MODEL \
+  "Use codebase_investigator to find [X]. Return a markdown checklist:
+  file path + one sentence on what to change. Nothing else.
+  Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+**Rules:**
+- Never ask for prose descriptions — always request structured lists
+- After Gemini returns, Claude does NOT re-read files to verify
+- If re-reading feels necessary, the prompt was not specific enough
+- For recurring analysis, use `save_memory` to avoid re-running next session
+
+→ See `examples.md` "Full Delegation Workflows" for 8 ready-to-use commands.

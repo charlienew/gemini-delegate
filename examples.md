@@ -414,3 +414,107 @@ gemini -m $DEFAULT_MODEL \
   "Review @./auth.ts for security issues. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
+
+---
+
+## Full Delegation Workflows
+
+These patterns are designed to save Claude Code tokens. Gemini does all the
+reading/writing — Claude only sees a short confirmation or structured summary.
+
+### CLAUDE.md Generation
+
+Gemini analyzes the entire codebase and writes the file directly. Claude reads nothing.
+
+```bash
+gemini -m $DEFAULT_MODEL --yolo \
+  "Use codebase_investigator to fully analyze this project. Write a CLAUDE.md
+  covering: project purpose, architecture overview, key files and their roles,
+  development commands (build, test, lint), and coding conventions. Write
+  directly to ./CLAUDE.md. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Refactor Impact Map
+
+Returns a targeted checklist. Claude reads only the listed files.
+
+```bash
+gemini -m $DEFAULT_MODEL \
+  "Use codebase_investigator to find every file affected by [describe change].
+  Return a markdown checklist: each item is a file path + one sentence on what
+  needs to change. Nothing else. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Large Diff / PR Review
+
+Pipes the diff directly to Gemini. The full diff never enters Claude's context.
+
+```bash
+git diff main...HEAD | gemini -m $DEFAULT_MODEL \
+  "Review this diff. Return a markdown report: (1) change summary, (2) bugs
+  found with file:line references, (3) security concerns, (4) suggestions.
+  Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Test Suite Generation
+
+Gemini reads source files and writes test files directly. Claude sees only a summary.
+
+```bash
+gemini -m $DEFAULT_MODEL --yolo \
+  "Read all source files in @./src/[module]. Generate comprehensive tests
+  covering all exports and edge cases. Write test files alongside source files.
+  Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Dependency Migration Analysis
+
+Returns a file-by-file change checklist for upgrading a library or API.
+
+```bash
+gemini -m $DEFAULT_MODEL \
+  "Use codebase_investigator to find every usage of [old API/library]. Return a
+  markdown checklist: file path + exactly what needs to change for [new version].
+  Order by dependency. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Data / Log File Exploration
+
+Scans many files and returns a structured summary Claude can act on directly.
+
+```bash
+gemini -m $DEFAULT_MODEL \
+  "Read all files matching @./data/*.json. Identify the schema, value ranges,
+  and any anomalies. Return a structured summary: field names, types, and sample
+  values. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Dead Code Detection
+
+Returns a list. Claude removes the listed symbols without reading the codebase.
+
+```bash
+gemini -m $DEFAULT_MODEL \
+  "Use codebase_investigator to find all unused exports, functions, and
+  variables across this project. Return a list: file path + symbol name + why
+  it appears unused. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+### Codebase Map Saved to Memory
+
+Front-load once. Gemini stores the map in `~/.gemini/` for reuse across sessions.
+
+```bash
+gemini -m $DEFAULT_MODEL --yolo \
+  "Use codebase_investigator to map this project. Then use save_memory with key
+  'codebase_map' = a structured list of every meaningful file: path, one-line
+  purpose, and key exports. Execute immediately, do not show a plan." \
+  -o text 2>&1
+```

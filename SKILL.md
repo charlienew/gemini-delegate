@@ -72,12 +72,30 @@ gemini -m [MODEL] [--yolo] \
 
 ---
 
-## Step 4: Pick the Right Task Type
+## Step 4: Should I Delegate to Gemini?
 
+```
+Will this require reading more than 3-4 files?        → YES, delegate
+Will this generate more than ~100 lines of code?      → YES, have Gemini write directly
+Does this need current web info Claude doesn't have?  → YES, delegate
+Does this involve images, video, or PDF?              → YES, delegate
+Can Claude handle it in 1-2 targeted reads?           → Handle directly
+```
+
+**Output format rules — critical for token savings:**
+- **Generation tasks** (`--yolo`): Ask Gemini to write files directly to disk.
+  Generated code never enters Claude's context — only a short confirmation does.
+- **Analysis tasks** (no `--yolo`): Ask for structured output — file paths,
+  markdown checklists, tables. Never prose. Claude acts on the list without
+  re-reading anything.
+
+**Task types:**
 - File > 500 lines or large file summary → **Large File Reading**
 - Images, video, PDF → **Multimodal**
 - Current info / latest versions / CVEs → **Web Search**
 - Understand a codebase → **Architecture Analysis**
+- Generate CLAUDE.md, test suites, scaffolding → **Full Delegation: Write Directly**
+- Refactor impact, dead code, migration, diff review → **Full Delegation: Structured Handoff**
 - Write new code → **Code Generation**
 - Review code or find bugs → **Code Review**
 - Write tests → **Test Generation**
