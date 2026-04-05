@@ -13,7 +13,7 @@ Set your Google AI tier. Options: `free` or `pro`
 - `pro`  — Uses auto-gemini-3 (auto-selects Pro/Flash). Requires Google AI Pro subscription.
 
 ```
-TIER=free
+TIER=
 ```
 
 ---
@@ -31,12 +31,12 @@ override the defaults for a specific model.
 # Primary model — used for complex tasks (large files, architecture, generation)
 # Free default:  gemini-2.5-flash
 # Pro default:   auto-gemini-3
-DEFAULT_MODEL=gemini-2.5-flash
+DEFAULT_MODEL=
 
 # Fast model — used for quick tasks (lookups, simple reviews, short questions)
 # Free default:  gemini-2.5-flash-lite
 # Pro default:   gemini-3-flash-preview
-FAST_MODEL=gemini-2.5-flash-lite
+FAST_MODEL=
 
 # Preview model — pro only, for cutting-edge reasoning (leave blank if unused)
 # Pro option:  gemini-3.1-pro-preview
@@ -97,7 +97,8 @@ PREVIEW_MODEL=gemini-3.1-pro-preview
 
 ## Notes
 
-- This file is read-only from the skill's perspective. Claude will not modify it.
+- On first use, if `TIER` is empty, the skill auto-detects your setup via Gemini's `cli_help` agent and writes the values here.
+- After auto-detection, you can edit this file manually to override any value.
 - Gemini CLI must be installed and authenticated before this skill works.
   Install: `npm install -g @google/gemini-cli`
   Auth: run `gemini` once interactively, or set `GEMINI_API_KEY` environment variable.

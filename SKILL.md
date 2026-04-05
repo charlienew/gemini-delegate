@@ -27,20 +27,59 @@ and native multimodal file reading (images, video, PDF).
 ## See Also
 - `tools.md` — when and how to use each Gemini tool (`codebase_investigator`, `google_web_search`, `read_file`, `save_memory`)
 - `examples.md` — full command gallery for every use case
-- `patterns.md` — advanced integration patterns (generate-review-fix, validation pipeline, anti-patterns, sessions)
+- `patterns.md` — advanced integration patterns (generate-review-fix, validation pipeline, parallel subagents, anti-patterns, sessions)
 - `reference.md` — complete CLI flag, model, and configuration reference
 - `config.md` — model reference table and rate limit details
 
 ---
 
-## Step 1: Load Configuration
+## Step 1: Load or Auto-Detect Configuration
 
 ```bash
 cat ~/.claude/skills/gemini-delegate/config.md 2>/dev/null
 ```
 
-Extract `TIER`, `DEFAULT_MODEL`, `FAST_MODEL`, `PREVIEW_MODEL`. If the file is
-missing or a value is empty, use these defaults:
+Extract `TIER`, `DEFAULT_MODEL`, `FAST_MODEL`, `PREVIEW_MODEL`.
+
+**If `TIER` is non-empty:** use the values as-is and skip to Step 2.
+
+**If `TIER` is empty** (first-time setup): run auto-detection without any API calls.
+
+**Step A — Read Gemini settings directly:**
+```bash
+cat ~/.gemini/settings.json 2>/dev/null
+```
+
+From the JSON, extract:
+- `security.auth.selectedType` → auth method
+- `model.name` → currently configured model (if present)
+
+**Step B — Infer tier from auth + model:**
+
+| `selectedType`       | `model.name` present?           | Tier  |
+|----------------------|---------------------------------|-------|
+| `oauth-personal`     | contains `gemini-3` or `auto`   | `pro` |
+| `oauth-personal`     | absent or `gemini-2.5-*`        | `free`|
+| `api-key`            | *(check model name same way)*   | either|
+| `service-account`    | any                             | `pro` |
+
+If tier is still ambiguous, default to `free`.
+
+**Step C — Set model variables from tier:**
+
+- **pro**: `DEFAULT_MODEL=auto-gemini-3`, `FAST_MODEL=gemini-3-flash-preview`, `PREVIEW_MODEL=gemini-3.1-pro-preview`
+- **free**: `DEFAULT_MODEL=gemini-2.5-flash`, `FAST_MODEL=gemini-2.5-flash-lite`, `PREVIEW_MODEL=`
+
+If `model.name` was present in settings.json and is a concrete model ID, use it as `DEFAULT_MODEL` instead.
+
+**Step D — Write back to config.md:**
+
+Using the Edit tool, replace the variable block in `~/.claude/skills/gemini-delegate/config.md`
+(the lines `TIER=`, `DEFAULT_MODEL=`, `FAST_MODEL=`, `PREVIEW_MODEL=`). Preserve all other content.
+
+Tell the user what was detected (auth method, tier, models) and that config.md has been updated.
+
+**Fallback defaults** (only if auto-detection fails — e.g. Gemini not installed):
 
 | Variable      | Free default            | Pro default              |
 |---------------|-------------------------|--------------------------|
@@ -133,11 +172,27 @@ gemini -m $FAST_MODEL \
 
 ### Architecture Analysis
 Uses `codebase_investigator`. Always requires `--yolo`.
+
+**Pre-flight: check project size first** (using Claude's Glob tool, before delegating):
+- Count source files in the project (e.g. `*.py`, `*.ts`, `*.js`)
+- If **> 30 source files**: scope to the main source directory and use `$FAST_MODEL`
+- If **≤ 30 source files**: run on the full project; `$DEFAULT_MODEL` is fine
+
+`codebase_investigator` is tool-call-intensive, not reasoning-intensive — `$FAST_MODEL`
+has better per-minute throughput and avoids RPM limits on large projects.
+
 ```bash
+# Large project (> 30 source files) — scoped + FAST_MODEL to avoid RPM limits
+gemini -m $FAST_MODEL --yolo --include-directories ./src \
+  "Use codebase_investigator to analyze this project. Report architecture, key files, entry points, and dependencies. Execute immediately, do not show a plan." \
+  -o text 2>&1
+
+# Small project (≤ 30 source files) — full project
 gemini -m $DEFAULT_MODEL --yolo \
   "Use codebase_investigator to analyze this project. Report architecture, key files, entry points, and dependencies. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
+
 → See `tools.md` for scoped analysis and tool combination patterns.
 
 ### Code Generation
@@ -197,7 +252,7 @@ For generated code, always verify before presenting to the user:
 | Symptom | Fix |
 |---------|-----|
 | Bash call hangs | Prompt missing "Execute immediately, do not show a plan." |
-| `quota will reset after Xs` | CLI auto-retries; switch to `$FAST_MODEL` for sustained pressure |
+| `quota will reset after Xs.. Retrying after Ys` | RPM limit hit (not daily quota). CLI auto-retries with exponential backoff — Y > X is intentional. For `codebase_investigator`: scope with `--include-directories` and use `$FAST_MODEL` |
 | `Model not found` | Model in `config.md` not available on your plan |
 | Auth error | Run `gemini` interactively to re-authenticate |
 | Context too large | Add `.geminiignore` or scope with `--include-directories ./src` |

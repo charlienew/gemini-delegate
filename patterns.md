@@ -63,7 +63,9 @@ file writes can conflict.
 
 ```
 Is the task complex (multi-file, deep analysis, 1M+ context)?
-├── Yes → Use DEFAULT_MODEL (auto-gemini-3 on pro, gemini-2.5-flash on free)
+├── Yes → Is it codebase_investigator on a large project (> 30 source files)?
+│   ├── Yes → Use FAST_MODEL + --include-directories (avoids RPM limits)
+│   └── No → Use DEFAULT_MODEL
 └── No → Is speed the priority (quick lookup, simple review)?
     ├── Yes → Use FAST_MODEL (gemini-3-flash-preview on pro, gemini-2.5-flash-lite on free)
     └── No → Is cutting-edge reasoning needed? (pro only)
@@ -71,10 +73,18 @@ Is the task complex (multi-file, deep analysis, 1M+ context)?
         └── No → Use DEFAULT_MODEL
 ```
 
+**Why `codebase_investigator` is different:** it's tool-call-intensive, not
+reasoning-intensive. The bottleneck is how fast the model can invoke file-reading
+tools — FAST_MODEL has better per-minute throughput, preventing RPM limit hits
+during the rapid scan. Model reasoning quality doesn't matter here.
+
 **Examples:**
 ```bash
-# Complex: full codebase analysis → DEFAULT_MODEL
-gemini -m $DEFAULT_MODEL --yolo "Use codebase_investigator... Execute immediately, do not show a plan." -o text 2>&1
+# Large codebase investigation → FAST_MODEL (RPM-safe)
+gemini -m $FAST_MODEL --yolo --include-directories ./src "Use codebase_investigator... Execute immediately, do not show a plan." -o text 2>&1
+
+# Complex reasoning task → DEFAULT_MODEL
+gemini -m $DEFAULT_MODEL --yolo "Generate auth module with JWT... Execute immediately, do not show a plan." -o text 2>&1
 
 # Quick: version lookup → FAST_MODEL
 gemini -m $FAST_MODEL "Use Google Search: latest version of [lib]. Execute immediately, do not show a plan." -o text 2>&1
@@ -395,3 +405,63 @@ gemini -m $DEFAULT_MODEL \
 - For recurring analysis, use `save_memory` to avoid re-running next session
 
 → See `examples.md` "Full Delegation Workflows" for 8 ready-to-use commands.
+
+---
+
+## Pattern 12: Parallel Gemini via Claude Subagents
+
+Use Claude's **Agent tool** (not bash `&`) when parallel Gemini tasks need
+per-task Claude work: reading config, constructing commands, validating output,
+or post-processing before returning results.
+
+**Bash `&` (Pattern 2) vs Agent subagents:**
+
+| | Bash `&` | Agent subagents |
+|---|---|---|
+| Best for | Simple independent commands | Tasks needing per-task logic or validation |
+| Overhead | Zero | Subagent spawn cost |
+| Output handling | `wait` then read file/stdout | Each subagent returns structured result |
+| Context isolation | Shared bash session | Each subagent has its own context |
+| Error handling | Manual PID tracking | Managed by Claude infrastructure |
+
+**When to use Agent subagents:**
+- 3+ modules to analyze or generate independently
+- Each task needs config reading, output parsing, or validation
+- You want results returned as structured data, not raw Gemini stdout
+
+**How to dispatch:**
+
+Tell Claude to spawn subagents in a single message (parallel dispatch). Each
+subagent should:
+1. Read `config.md` to get model variables
+2. Run its specific Gemini command
+3. Return a short structured result (not raw Gemini output)
+
+**Example prompt to Claude:**
+```
+Analyze the auth, payments, and notification modules in parallel.
+Use the Agent tool to dispatch three subagents simultaneously — one per module.
+Each subagent should run codebase_investigator scoped to its directory and
+return: module name, key files, and a 3-bullet architecture summary.
+```
+
+**What each subagent runs:**
+```bash
+# Subagent 1 (auth)
+gemini -m $FAST_MODEL --yolo --include-directories ./src/auth \
+  "Use codebase_investigator to analyze the auth module.
+   Return: key files, entry point, dependencies, 3-bullet summary.
+   Execute immediately, do not show a plan." \
+  -o text 2>&1
+
+# Subagent 2 (payments) — runs simultaneously
+gemini -m $FAST_MODEL --yolo --include-directories ./src/payments \
+  "Use codebase_investigator to analyze the payments module.
+   Return: key files, entry point, dependencies, 3-bullet summary.
+   Execute immediately, do not show a plan." \
+  -o text 2>&1
+```
+
+**Rate limit note:** parallel Gemini subagents multiply RPM pressure. Use
+`$FAST_MODEL` for subagent tasks (better RPM) and limit to 3 concurrent
+subagents. If you need more, batch in waves of 3.

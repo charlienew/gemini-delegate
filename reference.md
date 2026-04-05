@@ -248,10 +248,18 @@ dist/
 
 **Auto-retry behavior:** When the limit is hit, you'll see:
 ```
-quota will reset after Xs
+quota will reset after Xs.. Retrying after Ys...
 ```
-The CLI retries automatically — no action needed. For sustained pressure,
-switch to a faster/lighter model (see `patterns.md` Pattern 4).
+The CLI retries automatically — no action needed. The retry wait (Y) is often
+much longer than the stated reset time (X): this is intentional exponential
+backoff, not a bug. The CLI adds a safety margin to avoid immediately hitting
+the limit again on retry.
+
+**This is usually an RPM (requests per minute) limit, not a daily limit.**
+Heavy tools like `codebase_investigator` make many rapid API calls in quick
+succession and can exhaust the per-minute window even when daily usage is low.
+For sustained pressure, switch to a faster/lighter model (see `patterns.md`
+Pattern 4).
 
 ---
 
