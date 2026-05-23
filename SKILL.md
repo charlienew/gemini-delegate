@@ -106,7 +106,7 @@ Use `--yolo` / `-y` for tasks that **write files**. Omit `--yolo` for read-only 
 ## Step 3: Standard Command Template
 
 ```bash
-gemini -m [MODEL] [--yolo] \
+gemini -m [MODEL] --skip-trust [--yolo] \
   "[task]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -148,7 +148,7 @@ Can Claude handle it in 1-2 targeted reads?           → Handle directly
 
 ### Large File Reading
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Read and summarize @./path/to/file.ts. Include purpose, key exports, and main logic flows. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -156,7 +156,7 @@ gemini -m $DEFAULT_MODEL \
 ### Multimodal (Images, Video, PDF)
 All use `@path/to/file` syntax. Gemini's `read_file` handles the format automatically.
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "[Describe / analyze / extract from] @./file.[png|mp4|pdf]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -165,7 +165,7 @@ gemini -m $DEFAULT_MODEL \
 ### Real-Time Web Search
 Use `$FAST_MODEL`. Always tell Gemini to use Google Search explicitly.
 ```bash
-gemini -m $FAST_MODEL \
+gemini -m $FAST_MODEL --skip-trust \
   "Use Google Search: [question requiring current info]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -183,12 +183,12 @@ has better per-minute throughput and avoids RPM limits on large projects.
 
 ```bash
 # Large project (> 30 source files) — scoped + FAST_MODEL to avoid RPM limits
-gemini -m $FAST_MODEL --yolo --include-directories ./src \
+gemini -m $FAST_MODEL --skip-trust --yolo --include-directories ./src \
   "Use codebase_investigator to analyze this project. Report architecture, key files, entry points, and dependencies. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Small project (≤ 30 source files) — full project
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Use codebase_investigator to analyze this project. Report architecture, key files, entry points, and dependencies. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -198,7 +198,7 @@ gemini -m $DEFAULT_MODEL --yolo \
 ### Code Generation
 Always use `--yolo`. Add `--include-directories ./src` for codebase-aware generation.
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create [description] with [features]. Write all files. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -206,7 +206,7 @@ gemini -m $DEFAULT_MODEL --yolo \
 ### Code Review
 Omit `--yolo` for read-only review. Add it only if also applying fixes.
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Review @./path/to/file.ts. Report bugs, security issues, and improvements with line references. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -214,14 +214,14 @@ gemini -m $DEFAULT_MODEL \
 ### Test Generation
 Always use `--yolo`.
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Generate [Jest/pytest/Vitest] tests for @./path/to/module.ts covering all exports and edge cases. Write to ./path/to/module.test.ts. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 ### Documentation
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Add JSDoc to every undocumented function in @./path/to/file.ts. Write back to the same file. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```

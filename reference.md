@@ -35,6 +35,7 @@ gemini   # First run prompts for login
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--yolo` | `-y` | Auto-approve all tool calls (required for file writes) |
+| `--skip-trust` | `-s` | Skip trusted-directory check; required for non-interactive/headless execution. |
 | `--output-format` | `-o` | Output format: `text`, `json`, `stream-json` |
 | `--model` | `-m` | Model selection (e.g., `-m auto-gemini-3`) |
 | `--approval-mode` | | `default`, `auto_edit`, or `yolo` (same as `--yolo`) |
@@ -173,13 +174,13 @@ it becomes available on the free tier.
 ### Model Usage
 ```bash
 # Pro tier default (alias — recommended)
-gemini -m auto-gemini-3 "prompt" -o text 2>&1
+gemini -m auto-gemini-3 --skip-trust "prompt" -o text 2>&1
 
 # Pro tier fast
-gemini -m gemini-3-flash-preview "prompt" -o text 2>&1
+gemini -m gemini-3-flash-preview --skip-trust "prompt" -o text 2>&1
 
 # Free tier
-gemini -m gemini-2.5-flash "prompt" -o text 2>&1
+gemini -m gemini-2.5-flash --skip-trust "prompt" -o text 2>&1
 ```
 
 ---

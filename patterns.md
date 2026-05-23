@@ -13,17 +13,17 @@ and fix steps; omit it on the review step to prevent unintended writes.
 
 ```bash
 # Step 1: Generate (--yolo required — writes files)
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create [description]. Write to [path]. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Step 2: Review (no --yolo — read only)
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Review [path] for bugs, security issues, and correctness. Reference specific lines. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Step 3: Fix (--yolo required — writes files)
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Fix the issues found in [path]: [list from review]. Apply fixes now. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -40,7 +40,7 @@ For long-running tasks, run in background and continue other work.
 
 ```bash
 # Single background task
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "[long task]. Execute immediately, do not show a plan." \
   -o text 2>&1 &
 echo "Gemini running (PID: $!)"
@@ -48,9 +48,9 @@ echo "Gemini running (PID: $!)"
 
 **Parallel independent tasks:**
 ```bash
-gemini -m $DEFAULT_MODEL --yolo "Create the frontend. Execute immediately, do not show a plan." -o text 2>&1 &
-gemini -m $DEFAULT_MODEL --yolo "Create the backend. Execute immediately, do not show a plan."  -o text 2>&1 &
-gemini -m $DEFAULT_MODEL --yolo "Generate the tests. Execute immediately, do not show a plan."  -o text 2>&1 &
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Create the frontend. Execute immediately, do not show a plan." -o text 2>&1 &
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Create the backend. Execute immediately, do not show a plan."  -o text 2>&1 &
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Generate the tests. Execute immediately, do not show a plan."  -o text 2>&1 &
 wait  # Wait for all to complete
 ```
 
@@ -81,16 +81,16 @@ during the rapid scan. Model reasoning quality doesn't matter here.
 **Examples:**
 ```bash
 # Large codebase investigation → FAST_MODEL (RPM-safe)
-gemini -m $FAST_MODEL --yolo --include-directories ./src "Use codebase_investigator... Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $FAST_MODEL --skip-trust --yolo --include-directories ./src "Use codebase_investigator... Execute immediately, do not show a plan." -o text 2>&1
 
 # Complex reasoning task → DEFAULT_MODEL
-gemini -m $DEFAULT_MODEL --yolo "Generate auth module with JWT... Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Generate auth module with JWT... Execute immediately, do not show a plan." -o text 2>&1
 
 # Quick: version lookup → FAST_MODEL
-gemini -m $FAST_MODEL "Use Google Search: latest version of [lib]. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $FAST_MODEL --skip-trust "Use Google Search: latest version of [lib]. Execute immediately, do not show a plan." -o text 2>&1
 
 # Cutting-edge (pro only): experimental reasoning
-gemini -m $PREVIEW_MODEL "Analyze [complex problem]. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $PREVIEW_MODEL --skip-trust "Analyze [complex problem]. Execute immediately, do not show a plan." -o text 2>&1
 ```
 
 ---
@@ -103,22 +103,22 @@ You'll see `quota will reset after Xs` — just wait.
 **Switch to fast model for sustained pressure:**
 ```bash
 # If hitting limits on DEFAULT_MODEL tasks
-gemini -m $FAST_MODEL --yolo "[task]. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $FAST_MODEL --skip-trust --yolo "[task]. Execute immediately, do not show a plan." -o text 2>&1
 ```
 
 **Batch related operations into one call:**
 ```bash
 # Instead of 3 separate calls:
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create files A, B, and C: [specs for each]. Create all now. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 **Sequential with delay (for automated scripts):**
 ```bash
-gemini -m $DEFAULT_MODEL --yolo "[task 1]. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "[task 1]. Execute immediately, do not show a plan." -o text 2>&1
 sleep 2
-gemini -m $DEFAULT_MODEL --yolo "[task 2]. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "[task 2]. Execute immediately, do not show a plan." -o text 2>&1
 ```
 
 ---
@@ -127,14 +127,14 @@ gemini -m $DEFAULT_MODEL --yolo "[task 2]. Execute immediately, do not show a pl
 
 **Explicit file references:**
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Based on @./package.json and @./src/index.ts, suggest architectural improvements. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 **Directory-level inclusion:**
 ```bash
-gemini -m $DEFAULT_MODEL --yolo --include-directories ./src \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo --include-directories ./src \
   "[task that needs full src context]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -158,7 +158,7 @@ in every session for that project:
 
 **Explicit inline context:**
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Project uses React 18 + TypeScript. State: Zustand. Styling: Tailwind.
   Create a [component]. Execute immediately, do not show a plan." \
   -o text 2>&1
@@ -172,7 +172,7 @@ Always validate generated code before presenting to the user.
 
 ```bash
 # Step 1: Generate
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create [module]. Write to ./module.ts. Execute immediately, do not show a plan." \
   -o text 2>&1
 
@@ -198,7 +198,7 @@ prettier --check ./module.ts
 
 **Automated sequence:**
 ```bash
-gemini -m $DEFAULT_MODEL --yolo "Create [module] in ./module.ts. Execute immediately, do not show a plan." -o text 2>&1 \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Create [module] in ./module.ts. Execute immediately, do not show a plan." -o text 2>&1 \
   && tsc --noEmit ./module.ts \
   && eslint ./module.ts \
   && npm test
@@ -212,22 +212,22 @@ Build complex outputs in stages. Each stage validates before the next begins.
 
 ```bash
 # Stage 1: Core structure
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create a basic Express server with routes for /api/users and /api/auth. Write to ./server.ts. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Stage 2: Add authentication
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Add JWT authentication middleware to @./server.ts. Preserve existing routes. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Stage 3: Add another feature
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Add rate limiting to @./server.ts. Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Stage 4: Final review
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Review @./server.ts for bugs, security issues, and improvements. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -245,7 +245,7 @@ Use both AIs for highest confidence output.
 ```bash
 # 1. Claude writes the code (using normal Claude Code tools)
 # 2. Gemini reviews from a different perspective
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Review @./path/to/claude-generated.ts for bugs, security issues, and logic errors.
   Be critical. Execute immediately, do not show a plan." \
   -o text 2>&1
@@ -254,7 +254,7 @@ gemini -m $DEFAULT_MODEL \
 **Gemini generates, Claude reviews:**
 ```bash
 # 1. Gemini generates
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Create [code]. Write to [path]. Execute immediately, do not show a plan." \
   -o text 2>&1
 # 2. Claude reviews in the normal conversation
@@ -273,7 +273,7 @@ For multi-turn workflows, use Gemini sessions to preserve context.
 
 ```bash
 # Initial analysis
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Analyze the architecture of this project. Execute immediately, do not show a plan." \
   -o text 2>&1
 # Session is saved automatically
@@ -300,7 +300,7 @@ echo "What security issues did you find?" | gemini -r latest -o text 2>&1
 Use JSON output for automation, monitoring, and structured result handling.
 
 ```bash
-OUTPUT=$(gemini -m $DEFAULT_MODEL --yolo \
+OUTPUT=$(gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "[task]. Execute immediately, do not show a plan." \
   -o json 2>&1)
 
@@ -337,10 +337,10 @@ for tool, info in tools.items():
 **Cause:** Prompt doesn't end with "Execute immediately, do not show a plan."
 ```bash
 # ❌ Hangs
-gemini -m $DEFAULT_MODEL --yolo "Create a user service." -o text 2>&1
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Create a user service." -o text 2>&1
 
 # ✅ Works
-gemini -m $DEFAULT_MODEL --yolo "Create a user service. Execute immediately, do not show a plan." -o text 2>&1
+gemini -m $DEFAULT_MODEL --skip-trust --yolo "Create a user service. Execute immediately, do not show a plan." -o text 2>&1
 ```
 
 ### Blind Trust
@@ -381,7 +381,7 @@ Claude only receives a short confirmation or structured summary.
 disk; Claude never sees the code, only a confirmation.
 ```bash
 # Gemini generates AND writes — Claude context cost: ~50 tokens
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Generate [code]. Write to [path]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -391,7 +391,7 @@ targeted list (file paths, checklists, tables) Claude can act on without
 re-reading anything.
 ```bash
 # Gemini explores entire codebase — Claude context cost: size of the list only
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Use codebase_investigator to find [X]. Return a markdown checklist:
   file path + one sentence on what to change. Nothing else.
   Execute immediately, do not show a plan." \
@@ -448,14 +448,14 @@ return: module name, key files, and a 3-bullet architecture summary.
 **What each subagent runs:**
 ```bash
 # Subagent 1 (auth)
-gemini -m $FAST_MODEL --yolo --include-directories ./src/auth \
+gemini -m $FAST_MODEL --skip-trust --yolo --include-directories ./src/auth \
   "Use codebase_investigator to analyze the auth module.
    Return: key files, entry point, dependencies, 3-bullet summary.
    Execute immediately, do not show a plan." \
   -o text 2>&1
 
 # Subagent 2 (payments) — runs simultaneously
-gemini -m $FAST_MODEL --yolo --include-directories ./src/payments \
+gemini -m $FAST_MODEL --skip-trust --yolo --include-directories ./src/payments \
   "Use codebase_investigator to analyze the payments module.
    Return: key files, entry point, dependencies, 3-bullet summary.
    Execute immediately, do not show a plan." \

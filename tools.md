@@ -28,14 +28,14 @@ dependencies, identifying entry points, and surfacing patterns across files.
 
 Always combine with `--yolo` (the tool requires approval to run):
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Use the codebase_investigator tool to [goal]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 Scope it when the full project is too large:
 ```bash
-gemini -m $DEFAULT_MODEL --yolo --include-directories ./src/auth \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo --include-directories ./src/auth \
   "Use codebase_investigator to map the authentication system. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -63,7 +63,7 @@ how you get current information.
 Always explicitly instruct Gemini to use Google Search — otherwise it may
 answer from its training data instead:
 ```bash
-gemini -m $FAST_MODEL \
+gemini -m $FAST_MODEL --skip-trust \
   "Use Google Search: [question]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -100,21 +100,21 @@ This is what makes `@file` syntax work in prompts.
 
 Reference files inline in the prompt:
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Read @./path/to/file.ts and [task]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 Multiple files in one prompt:
 ```bash
-gemini -m $DEFAULT_MODEL \
+gemini -m $DEFAULT_MODEL --skip-trust \
   "Compare @./old.ts and @./new.ts. List differences. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 Directory-level inclusion (Gemini reads what it needs):
 ```bash
-gemini -m $DEFAULT_MODEL --yolo --include-directories ./src \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo --include-directories ./src \
   "[task involving files in ./src]. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -138,14 +138,14 @@ reloaded automatically in future sessions.
 
 **Invocation:**
 ```bash
-gemini -m $FAST_MODEL --yolo \
+gemini -m $FAST_MODEL --skip-trust --yolo \
   "Save to memory: key='[name]', value='[content]'. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
 
 Retrieve stored memory:
 ```bash
-gemini -m $FAST_MODEL \
+gemini -m $FAST_MODEL --skip-trust \
   "Show all saved memory entries. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -175,7 +175,7 @@ Some tasks work best by combining tools in a single Gemini invocation:
 **Security audit:**
 `codebase_investigator` (map the surface) + `read_file` (read flagged files in depth)
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Use codebase_investigator to identify security-sensitive files, then use read_file to audit each one for SQL injection, XSS, and auth issues. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -183,7 +183,7 @@ gemini -m $DEFAULT_MODEL --yolo \
 **Architecture + current docs:**
 `codebase_investigator` (analyze local code) + `google_web_search` (check against latest API docs)
 ```bash
-gemini -m $DEFAULT_MODEL --yolo \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo \
   "Use codebase_investigator to map how we use the [library] API, then use Google Search to check if any of those usages are deprecated. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
@@ -191,7 +191,7 @@ gemini -m $DEFAULT_MODEL --yolo \
 **README generation:**
 `codebase_investigator` (understand the project) + `read_file` (read key files) + write output
 ```bash
-gemini -m $DEFAULT_MODEL --yolo --include-directories . \
+gemini -m $DEFAULT_MODEL --skip-trust --yolo --include-directories . \
   "Use codebase_investigator and read_file to understand this project thoroughly, then write a comprehensive README.md. Execute immediately, do not show a plan." \
   -o text 2>&1
 ```
